@@ -28,6 +28,6 @@ object HttpClient {
 
   }
 
-}
+  object Live extends HttpClient.ScalaJHttpClient
 
-object ScalaJHttpClient extends HttpClient.ScalaJHttpClient
+}
