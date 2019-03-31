@@ -75,7 +75,7 @@ libraryDependencies ++= Seq(
   "org.scalaz" %% "scalaz-zio" % ZIOVersion,
   // Application
   "org.ocpsoft.prettytime" % "prettytime" % "3.2.7.Final",
-  "org.scalaj" %% "scalaj-http" % "2.3.0",
+  "org.scalaj" %% "scalaj-http" % "2.4.1",
   // type classes
   "com.github.mpilquist" %% "simulacrum" % "0.12.0",
   // li haoyi ammonite repl embed

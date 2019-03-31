@@ -1,31 +1,55 @@
 package org.justinhj
 
-import org.justinhj.httpclient.HttpClient.Live
-
+import org.justinhj.httpclient.HttpClient
+import scalaz.zio.Runtime
 import scalaz.zio.blocking.Blocking
 import scalaz.zio.clock.Clock
-import scalaz.zio.{App, ZIO}
 import scalaz.zio.console.{putStrLn, _}
+import scalaz.zio.internal.{Platform, PlatformLive}
 import scalaz.zio.random.Random
 import scalaz.zio.system.System
 
-// Accessing the Hacker News API via Scalaz and the ZIO library
-// an example of purely functional code that handles effects and
-// can be sensibly tested
+trait LiveRuntime extends Runtime[Clock with Console with System with Random with Blocking with HttpClient] {
+  type Environment = Clock with Console with System with Random with Blocking with HttpClient
 
-trait HNApiApp extends App with HttpClient {
-  override val Environment: Environment = new Clock.Live with Console.Live with System.Live with Random.Live
-      with Blocking.Live with HttpClient.Live
-
+  val Platform: Platform       = PlatformLive.Default
+  val Environment: Environment = new Clock.Live with Console.Live with System.Live with Random.Live with Blocking.Live
+    with HttpClient.Live
 }
 
-object HNApiApp extends HNApiApp {
+object ZioHNApi {
 
-  def run(args: List[String]) =
-    sample(args).fold(_ => 1, _ => 0)
+  def main(args: Array[String]): Unit = {
 
-  def sample(args: List[String]) : ZIO[HNApiApp, Throwable, Unit] = {
-    putStrLn(s"There are ${args.length} args").flatMap{_ => httpclient.get("http://www.microsoft.com")}
+    type HNUserID = String
+    type HNItemID = Int
+
+    val HNMissingItemID : HNItemID = -1
+    val HNMissingUserID : HNUserID = ""
+
+    val baseHNURL : String = "https://hacker-news.firebaseio.com/v0/"
+    // These functions construct the url for various api queries
+    def getUserURL(userId: HNUserID) = s"${baseHNURL}user/$userId.json"
+
+    def getItemURL(itemId: HNItemID) = s"${baseHNURL}item/$itemId.json"
+
+    val getTopItemsURL = s"${baseHNURL}topstories.json"
+
+    val getMaxItemURL = s"${baseHNURL}maxitem.json"
+
+    val helloWorld = putStrLn(s"There are ${args.length} args");
+
+    val runtime = new LiveRuntime {}
+
+    val program = for(
+      _ <- helloWorld;
+      s <- httpclient.get(getTopItemsURL);
+      _ <- putStrLn(s"Received ${s} from httpclient")
+    ) yield s
+
+    runtime.unsafeRun(program)
+
   }
+
 
 }

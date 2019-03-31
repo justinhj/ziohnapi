@@ -1,5 +1,7 @@
 package org.justinhj
 
+import java.io.IOException
+
 import scalaz.zio.{App, UIO, ZIO}
 import scalaz.zio.console.{putStrLn, _}
 
@@ -15,7 +17,7 @@ object HelloZio extends App {
     ZIO.succeed(legalChars && beginsLetter)
   }
 
-  val myAppLogic =
+  val myAppLogic: ZIO[Console, IOException, Unit] =
     for {
       _ <- putStrLn("Hello! What is your name?")
       input <- getStrLn
