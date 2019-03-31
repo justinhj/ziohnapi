@@ -20,7 +20,7 @@ object HttpClient {
 
   // Implementation using ScalaJ
 
-  trait Live extends HttpClient {
+  trait HttpClientLive extends HttpClient {
 
     def customOptions: Seq[HttpOptions.HttpOption] = Seq(
       HttpOptions.connTimeout(5000),
@@ -82,6 +82,6 @@ object HttpClient {
 
   }
 
-  object Live extends HttpClient.Live
+  object Live extends HttpClient.HttpClientLive
 
 }
