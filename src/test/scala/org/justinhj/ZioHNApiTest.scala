@@ -21,7 +21,7 @@ class ZioHNApiTest extends FlatSpec {
 
     val sampleTopStories = "[19536375,19536173,19535059,19535564]"
 
-    val httpClient: Service[Any] = new Service[Any] {
+    val httpClient: Service[Any with HttpClient with Blocking] = new Service[Any with HttpClient with Blocking] {
 
       def requestSync(url: String) : String = {
         if(url == ZioHNApi.getTopItemsURL) sampleTopStories

@@ -3,7 +3,7 @@ package org.justinhj
 import java.io.IOException
 
 import org.justinhj.httpclient.HttpClient
-import scalaz.zio.{Runtime, ZIO}
+import scalaz.zio.{Runtime, Task, ZIO}
 import scalaz.zio.blocking.Blocking
 import scalaz.zio.clock.Clock
 import scalaz.zio.console.{putStrLn, _}
@@ -40,26 +40,31 @@ object ZioHNApi {
 
   val getMaxItemURL = s"${baseHNURL}maxitem.json"
 
-  def parseTopItemsResponse(s: String): HNItemIDList = {
-    val result: HNItemIDList = read[HNItemIDList](s)
-    result
+  def parseTopItemsResponse(s: String): Task[HNItemIDList]= {
+    ZIO.effect(read[HNItemIDList](s))
   }
 
   def main(args: Array[String]): Unit = {
 
     val runtime = new LiveRuntime {}
 
-    val helloWorld = putStrLn(s"There are ${args.length} args")
+    val startMessage = putStrLn(s"There are ${args.length} args")
     val readWorld: ZIO[Console, IOException, String] = getStrLn
 
     val program = for(
-      _ <- helloWorld;
-      s <- httpclient.get(getMaxItemURL);
-      items = parseTopItemsResponse(s);
+      _ <- startMessage;
+      s <- httpclient.get(getTopItemsURL);
+      // This is short form of the following (httpclient is implemented in the package object)
+      //s <- ZIO.accessM[HttpClient with Blocking, Throwable, String](_.httpClient get getTopItemsURL);
+      items <- parseTopItemsResponse(s);
       _ <- putStrLn(s"Received ${items.size} top page items from httpclient")
     ) yield ()
 
-    val handleErrors = program.foldM(err => putStrLn(s"Failed with ${err.getMessage}"), _ => putStrLn("Success"))
+    val handleErrors = program.foldM(
+      err =>
+        putStrLn(s"Failed with ${err.getMessage}"),
+      _ =>
+        putStrLn("Success"))
 
     runtime.unsafeRunSync(handleErrors)
   }

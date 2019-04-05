@@ -9,12 +9,12 @@ import scalaz.zio.blocking._
 import scala.util.{Failure, Success, Try}
 
 trait HttpClient {
-  val httpClient : HttpClient.Service[Any]
+  val httpClient : HttpClient.Service[Any with HttpClient with Blocking]
 
 }
 object HttpClient {
 
-  trait Service[R] {
+  trait Service[R <: HttpClient with Blocking] {
     def get(url: String): ZIO[R, Throwable, String]
   }
 
@@ -37,7 +37,7 @@ object HttpClient {
       compress = true
     )
 
-    val httpClient: Service[Any] = new Service[Any] {
+    val httpClient: Service[Any with HttpClient with Blocking] = new Service[Any with HttpClient with Blocking] {
 
       def requestSync(url: String) : String = {
 
@@ -74,8 +74,8 @@ object HttpClient {
         }
       }
 
-      final def get(url: String) : IO[Throwable, String] = {
-        ZIO.effect(requestSync(url))
+      final def get(url: String) : ZIO[Blocking, Throwable, String] = {
+        blocking(ZIO.effect(requestSync(url)))
       }
 
     }
