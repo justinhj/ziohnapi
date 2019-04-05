@@ -56,11 +56,9 @@ libraryDependencies ++= Seq(
   // -- Logging --
   "ch.qos.logback" % "logback-classic" % "1.1.3",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0",
-  // -- json/circe --
-  "io.circe" %% "circe-core" % CirceVersion,
-  "io.circe" %% "circe-generic" % CirceVersion,
-  "io.circe" %% "circe-jawn" % CirceVersion,
-  "io.circe" %% "circe-yaml" % "0.8.0",
+  // -- json parsing and dates
+  "com.lihaoyi" %% "upickle" % "0.7.1",
+  "org.ocpsoft.prettytime" % "prettytime" % "3.2.7.Final",
   // Cats
   "org.typelevel" %% "cats-core" % CatsVersion,
   "org.typelevel" %% "cats-effect" % CatsEffectVersion,

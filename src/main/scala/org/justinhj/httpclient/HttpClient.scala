@@ -3,7 +3,7 @@ package org.justinhj.httpclient
 import java.io
 
 import scalaj.http.{BaseHttp, HttpConstants, HttpOptions}
-import scalaz.zio.{IO, Task, ZIO}
+import scalaz.zio.{IO, Task, UIO, ZIO}
 import scalaz.zio.blocking._
 
 import scala.util.{Failure, Success, Try}
