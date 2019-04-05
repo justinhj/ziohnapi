@@ -39,14 +39,8 @@ javacOptions ++= Seq("-Xlint:unchecked", "-Xlint:deprecation", "-source", "1.7",
 //   "-J-XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=100M"
 // )
 
-val CatsVersion = "1.1.0"
-val CatsEffectVersion = "1.0.0-RC2"
-val CirceVersion = "0.10.0-M1"
-val MonixVersion = "3.0.0-M3"
 val ScalaZVersion = "7.3.0-M28"
 val ZIOVersion = "1.0-RC1"
-val ShapelessVersion = "2.3.3"
-val FS2Version = "1.0.4"
 
 libraryDependencies ++= Seq(
   "com.typesafe" % "config" % "1.3.1",
@@ -59,15 +53,6 @@ libraryDependencies ++= Seq(
   // -- json parsing and dates
   "com.lihaoyi" %% "upickle" % "0.7.1",
   "org.ocpsoft.prettytime" % "prettytime" % "3.2.7.Final",
-  // Cats
-  "org.typelevel" %% "cats-core" % CatsVersion,
-  "org.typelevel" %% "cats-effect" % CatsEffectVersion,
-  // fs2
-  "co.fs2" %% "fs2-core" % FS2Version,
-  // monix
-  "io.monix" %% "monix" % MonixVersion,
-  // shapeless
-  "com.chuusai" %% "shapeless" % ShapelessVersion,
   // scalaz
   "org.scalaz" %% "scalaz-core" % ScalaZVersion,
   "org.scalaz" %% "scalaz-zio" % ZIOVersion,
@@ -78,7 +63,6 @@ libraryDependencies ++= Seq(
   "com.github.mpilquist" %% "simulacrum" % "0.12.0",
   // li haoyi ammonite repl embed
   "com.lihaoyi" % "ammonite" % "1.1.2" % "test" cross CrossVersion.full
-
 )
 
 //ivyScala := ivyScala.value map { _.copy(overrideScalaVersion = true) }
