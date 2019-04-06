@@ -72,9 +72,6 @@ class ZioHNApiTest extends FlatSpec {
       _ => fail,
       items => assert(items.size == 4)
     )
-
-    assert(1+1 == 2)
-
   }
 
 
