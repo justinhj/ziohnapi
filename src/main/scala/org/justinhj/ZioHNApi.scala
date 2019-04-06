@@ -10,7 +10,7 @@ import scalaz.zio.console.{putStrLn, _}
 import scalaz.zio.internal.{Platform, PlatformLive}
 import scalaz.zio.random.Random
 import scalaz.zio.system.System
-import upickle.default.read
+import upickle.default._
 
 trait LiveRuntime extends Runtime[Clock with Console with System with Random with Blocking with HttpClient] {
   type Environment = Clock with Console with System with Random with Blocking with HttpClient
@@ -40,9 +40,17 @@ object ZioHNApi {
 
   val getMaxItemURL = s"${baseHNURL}maxitem.json"
 
-  def parseTopItemsResponse(s: String): Task[HNItemIDList]= {
-    ZIO.effect(read[HNItemIDList](s))
+  def parseHNResponse[T](s: String)(implicit r: Reader[T]) : Task[T] = {
+    ZIO.effect(read[T](s))
   }
+
+  def parseTopItemsResponse(s: String): Task[HNItemIDList]= {
+    parseHNResponse(s)
+  }
+
+//  def parseTopItemsResponse(s: String): Task[HNItemIDList]= {
+//    ZIO.effect(read[HNItemIDList](s))
+//  }
 
   def main(args: Array[String]): Unit = {
 

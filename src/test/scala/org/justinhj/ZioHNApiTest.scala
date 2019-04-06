@@ -1,6 +1,6 @@
 package org.justinhj
 
-import org.justinhj.ZioHNApi.getTopItemsURL
+import org.justinhj.ZioHNApi.{HNItemIDList, getTopItemsURL}
 import org.justinhj.httpclient.HttpClient
 import org.justinhj.httpclient.HttpClient.Service
 import org.scalatest.FlatSpec
@@ -44,17 +44,33 @@ class ZioHNApiTest extends FlatSpec {
       with HttpClientTest
   }
 
-  "Top stories" should "parse correctly in" in {
+  "Top stories" should "parse correctly" in {
 
     val runtime = new TestRuntime {}
 
-    val getTopStories = httpclient.get(getTopItemsURL)
+    // As flatmap
+    val getTopStories = httpclient.get(getTopItemsURL).flatMap {
+      unParsed => ZioHNApi.parseTopItemsResponse(unParsed)
+    }
 
-    val result: Exit[Throwable, String] = runtime.unsafeRunSync(getTopStories)
+    /*
+    // As for comprehension
+    val getTopStories2 = for(
+      unParsed <- httpclient.get(getTopItemsURL);
+      items <- ZioHNApi.parseTopItemsResponse(unParsed)
+    ) yield items
+
+    // As desugared for comprehension
+    val getTopStories3 = httpclient.get(getTopItemsURL).flatMap(unParsed =>
+      ZioHNApi.parseTopItemsResponse(unParsed).flatMap(items =>
+        ZioHNApi.parseTopItemsResponse(unParsed).flatMap(items2 =>
+          ZioHNApi.parseTopItemsResponse(unParsed).map(items3 => items ++ items2 ++ items3))))
+*/
+    val result: Exit[Throwable, HNItemIDList] = runtime.unsafeRunSync(getTopStories)
 
     result.fold(
       _ => fail,
-      success => assert(success == HttpClientTest.sampleTopStories)
+      items => assert(items.size == 4)
     )
 
     assert(1+1 == 2)
