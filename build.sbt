@@ -60,7 +60,8 @@ libraryDependencies ++= Seq(
   // Application
   "org.ocpsoft.prettytime" % "prettytime" % "3.2.7.Final",
   "org.scalaj" %% "scalaj-http" % "2.4.1",
-  // li haoyi ammonite repl embed
+  "org.apache.commons" % "commons-text" % "1.6",
+// li haoyi ammonite repl embed
   "com.lihaoyi" % "ammonite" % "1.1.2" % "test" cross CrossVersion.full
 )
 
