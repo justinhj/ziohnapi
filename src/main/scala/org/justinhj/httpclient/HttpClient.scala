@@ -40,7 +40,7 @@ object HttpClient {
       def requestSync(url: String) : String = {
 
         // TODO pass logging environment
-        //println(s"url get on thread ${Thread.currentThread().getName}")
+        println(s"url get on thread ${Thread.currentThread().getName}")
 
         Try(customHttp(url).asString) match {
 

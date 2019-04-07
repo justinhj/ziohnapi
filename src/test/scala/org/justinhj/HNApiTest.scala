@@ -11,7 +11,7 @@ import scalaz.zio.console.Console
 import scalaz.zio.internal.{Platform, PlatformLive}
 import scalaz.zio.random.Random
 import scalaz.zio.system.System
-import scalaz.zio.{Exit, IO, Runtime, ZIO}
+import scalaz.zio.{Exit, IO, Runtime, Task, ZIO}
 
 
 // Test suite for ZIO HackerNews API
@@ -28,10 +28,10 @@ class HNApiTest extends FlatSpec {
       def requestSync(url: String) : String = {
         if(url == HNApi.getTopItemsURL) sampleTopStories
         else if(url == HNApi.getItemURL(11498534)) sampleItem
-        else throw new Exception("Not found")
+        else throw new Exception(s"$url not found in http mock client")
       }
 
-      final def get(url: String) : IO[Throwable, String] = {
+      final def get(url: String) : Task[String] = {
         ZIO.effect(requestSync(url))
       }
     }
@@ -62,7 +62,6 @@ class HNApiTest extends FlatSpec {
       _ => fail,
       item => assert(item.by == "justinhj")
     )
-
   }
 
   "Top stories" should "parse correctly" in {

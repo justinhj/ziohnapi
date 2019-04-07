@@ -5,7 +5,7 @@ import org.justinhj.httpclient.HttpClient
 import org.justinhj.util.Util
 import scalaz.zio.blocking.Blocking
 import scalaz.zio.console.{putStrLn, _}
-import scalaz.zio.{Task, ZIO}
+import scalaz.zio.{Task, UIO, ZIO}
 import upickle.default.{ReadWriter, macroRW, _}
 
 object HNApi {
@@ -93,7 +93,7 @@ object HNApi {
 
   def fetchPage(startPage: Int, numItemsPerPage: Int, hNItemIDList: HNItemIDList): ZIO[Env, Throwable, List[HNItem]] = {
     val pageOfItems = hNItemIDList.slice(startPage * numItemsPerPage, startPage * numItemsPerPage + numItemsPerPage)
-    ZIO.foreachParN(8)(pageOfItems){id => fetchItem(id)}
+    ZIO.foreachParN(4)(pageOfItems){id => fetchItem(id)}
   }
 
   // Print a page of fetched items
