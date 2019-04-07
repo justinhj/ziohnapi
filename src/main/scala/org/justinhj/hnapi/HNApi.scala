@@ -5,7 +5,7 @@ import org.justinhj.httpclient.HttpClient
 import org.justinhj.util.Util
 import scalaz.zio.blocking.Blocking
 import scalaz.zio.console.{putStrLn, _}
-import scalaz.zio.{Task, UIO, ZIO}
+import scalaz.zio.{Task, ZIO}
 import upickle.default.{ReadWriter, macroRW, _}
 import org.apache.commons.text.StringEscapeUtils
 
@@ -100,8 +100,34 @@ object HNApi {
     val text = StringEscapeUtils.unescapeHtml3(item.text)
     putStrLn(
       s"""${item.by} ${Util.timestampToPretty(item.time)}
-         |${text}""".stripMargin)
+         |$text""".stripMargin)
   }
+
+  def showNestedComment(item: HNItem, indent: Int, items : Map[HNItemID, HNItem]): ZIO[Console, Nothing, Unit] = {
+    val text = StringEscapeUtils.unescapeHtml3(item.text)
+    val indentText = " " * indent * 3
+    for(
+      _ <- putStrLn(s"""$indentText${item.by} ${Util.timestampToPretty(item.time)}
+         |$indentText$text""".stripMargin);
+      _ <- ZIO.foreach(item.kids){kid => showNestedComment(items(kid), indent + 1, items)}
+    ) yield ()
+  }
+
+  def showComments(parent: HNItemID, items: Map[HNItemID, HNItem]) : ZIO[Console, Nothing, Unit] =
+    showNestedComment(items(parent), 0, items)
+
+  def getItemAndKids(parentId: Int) : ZIO[Env, Throwable, Map[HNItemID, HNItem]] =
+    getItemAndKidsList(parentId).map{
+      items =>
+        items.foldLeft(Map.empty[HNItemID, HNItem]){(m, item) => m.updated(item.id, item)}
+    }
+
+  def getItemAndKidsList(parentId: Int) : ZIO[Env, Throwable, List[HNItem]] =
+    for(
+      itemResponse <- httpclient.get(getItemURL(parentId));
+      item <- parseItemResponse(itemResponse);
+      kids <- ZIO.foreachParN(8)(item.kids){id => getItemAndKidsList(id)}
+    ) yield kids.flatten :+ item
 
   // Print a page of fetched items
   def printPageItems(startPage: Int, numItemsPerPage: Int, items: List[HNItem]): ZIO[Console, Throwable, List[Unit]] = {
@@ -112,8 +138,9 @@ object HNApi {
 
     ZIO.foreach(printList){
       case (item, n) =>
-        putStrLn(s"${itemNum(n)}. ${item.title} ${Util.getHostName(item.url)} [${item.url}]") *>
-          putStrLn(s"  ${item.score} points by ${item.by} at ${Util.timestampToPretty(item.time)} | ${item.descendants} comments")
+        putStrLn(
+          s"""${itemNum(n)}. ${item.title} ${Util.getHostName(item.url)} [${item.url}]
+             |    ${item.score} points by ${item.by} at ${Util.timestampToPretty(item.time)}| ${item.descendants} comments""".stripMargin)
     }
   }
 
