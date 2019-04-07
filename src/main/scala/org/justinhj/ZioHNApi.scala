@@ -124,43 +124,24 @@ object ZioHNApi {
 
   def showPagesLoop(topItems: HNItemIDList) : ZIO[Env, Throwable, Unit] = {
 
+    val itemsPerPage = 5
+
     getUserPage.flatMap {
       case Some(pageNumber) =>
         for(
           _ <- putStrLn(s"Page $pageNumber");
-          items <- fetchPage(pageNumber, 10, topItems);
-          _ <- printPageItems(pageNumber, 10, items);
+          items <- fetchPage(pageNumber, itemsPerPage, topItems);
+          _ <- printPageItems(pageNumber, itemsPerPage, items);
           _ <- showPagesLoop(topItems)
         ) yield ()
       case None =>
         putStrLn("Have a nice day!")
     }
-
-//  // Here we will show the page of items or exit if the user didn't enter a number
-//    getUserPage.flatMap {
-//
-//      case Some(page) =>
-//        println(s"fetch page $page")
-//
-//        for (
-//          fetchResult <- fetchPage(page, numItemsPerPage, topItems, cache);
-//          (env, items) = fetchResult;
-//          _ = println(s"${env.rounds.size} fetch rounds");
-//          _ <- printPageItems(page, numItemsPerPage, items);
-//          newCache <- showPagesLoop(topItems, Some(env.cache))
-//        ) yield newCache
-//
-//
-//      case None =>
-//        Task.succeed(())
-    }
-
+  }
 
   def main(args: Array[String]): Unit = {
 
     val runtime = new LiveRuntime {}
-
-    //val startMessage = putStrLn(s"There are ${args.length} args")
 
     val frontPage = for (
       s <- httpclient.get(getTopItemsURL);
@@ -170,15 +151,6 @@ object ZioHNApi {
 
     runtime.unsafeRunSync(frontPage)
 
-//    val program = for(
-//      _ <- startMessage;
-//      s <- httpclient.get(getTopItemsURL);
-//      // This is short form of the following (httpclient is implemented in the package object)
-//      //s <- ZIO.accessM[HttpClient with Blocking, Throwable, String](_.httpClient get getTopItemsURL);
-//      items <- parseTopItemsResponse(s);
-//      _ <- putStrLn(s"Received ${items.size} top page items from httpclient")
-//    ) yield ()
-//
 //    val handleErrors = program.foldM(
 //      err =>
 //        putStrLn(s"Failed with ${err.getMessage}"),
