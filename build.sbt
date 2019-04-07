@@ -50,17 +50,16 @@ libraryDependencies ++= Seq(
   // -- Logging --
   "ch.qos.logback" % "logback-classic" % "1.1.3",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0",
-  // -- json parsing and dates
+  // -- json parsing
   "com.lihaoyi" %% "upickle" % "0.7.1",
-  "org.ocpsoft.prettytime" % "prettytime" % "3.2.7.Final",
   // scalaz
   "org.scalaz" %% "scalaz-core" % ScalaZVersion,
   "org.scalaz" %% "scalaz-zio" % ZIOVersion,
+  // type classes
+  "com.github.mpilquist" %% "simulacrum" % "0.12.0",
   // Application
   "org.ocpsoft.prettytime" % "prettytime" % "3.2.7.Final",
   "org.scalaj" %% "scalaj-http" % "2.4.1",
-  // type classes
-  "com.github.mpilquist" %% "simulacrum" % "0.12.0",
   // li haoyi ammonite repl embed
   "com.lihaoyi" % "ammonite" % "1.1.2" % "test" cross CrossVersion.full
 )

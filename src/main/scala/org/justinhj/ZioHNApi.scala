@@ -1,16 +1,15 @@
 package org.justinhj
 
-import java.io.IOException
-
 import org.justinhj.httpclient.HttpClient
 import org.justinhj.util.Util
-import scalaz.zio.{Runtime, Task, UIO, ZIO}
+import scalaz.zio.{Runtime, Task, ZIO}
 import scalaz.zio.blocking.Blocking
 import scalaz.zio.clock.Clock
 import scalaz.zio.console.{putStrLn, _}
 import scalaz.zio.internal.{Platform, PlatformLive}
 import scalaz.zio.random.Random
 import scalaz.zio.system.System
+import upickle.default.{ReadWriter, macroRW}
 import upickle.default._
 
 trait LiveRuntime extends Runtime[Clock with Console with System with Random with Blocking with HttpClient] {
@@ -22,6 +21,8 @@ trait LiveRuntime extends Runtime[Clock with Console with System with Random wit
 }
 
 object ZioHNApi {
+
+  type Env = HttpClient with Blocking with Console
 
   type HNUserID = String
   type HNItemID = Int
@@ -43,96 +44,85 @@ object ZioHNApi {
 
   case class HNItem(
      id : HNItemID, // The item's unique id.
-     deleted : Option[Boolean] = Some(false), // true if the item is deleted.
+     deleted : Boolean = false, // true if the item is deleted.
      `type` : String, // The type of item. One of "job", "story", "comment", "poll", or "pollopt".
      by : HNUserID = HNMissingUserID, // The username of the item's author.
      time : Int, // Creation date of the item, in Unix Time.
      text : String = "", // The comment, story or poll text. HTML.
-     dead : Option[Boolean] = Some(false), // true if the item is dead.
+     dead : Boolean = false, // true if the item is dead.
      parent : HNItemID = HNMissingItemID, // The comment's parent: either another comment or the relevant story.
-     poll : Option[HNItemID] = Some(HNMissingItemID), // The pollopt's associated poll.
-     kids : Option[List[HNItemID]] = Some(List.empty), // The ids of the item's comments, in ranked display order.
-     url : Option[String] = Some(""), // The URL of the story.
-     score : Option[Int] = Some(-1), // The story's score, or the votes for a pollopt.
-     title : Option[String] = Some(""), // The title of the story, poll or job.
-     parts : Option[List[HNItemID]] = Some(List.empty), // A list of related pollopts, in display order.
-     descendants : Option[Int] = Some(0) // In the case of stories or polls, the total comment count.
+     poll : HNItemID = HNMissingItemID, // The pollopt's associated poll.
+     kids : List[HNItemID] = List.empty, // The ids of the item's comments, in ranked display order.
+     url : String = "", // The URL of the story.
+     score : Int, // The story's score, or the votes for a pollopt.
+     title : String, // The title of the story, poll or job.
+     parts : List[HNItemID] = List.empty, // A list of related pollopts, in display order.
+     descendants : Int // In the case of stories or polls, the total comment count.
    )
 
-  // Parse a type T form the input string, throws
-  def parseHNResponse[T](s: String)(implicit r: Reader[T]) : Task[T] = {
-    ZIO.effect(read[T](s))
+  object HNItem {
+    implicit val rw: ReadWriter[HNItem] = macroRW
   }
 
-  def parseTopItemsResponse(s: String): Task[HNItemIDList]= parseHNResponse[HNItemIDList](s)
+  // Parse a type T form the input string, throws
+  def parseHNResponse[T](s: String)(implicit r: ReadWriter[T]): ZIO[Console, Throwable, T] = {
+    //putStrLn(s"Parsing $s") *>
+      ZIO.effect(read[T](s))
+  }
 
-  def parseItemResponse(s: String) : Task[HNItem] = parseHNResponse[HNItem](s)
+  def parseTopItemsResponse(s: String): ZIO[Console, Throwable, HNItemIDList]= parseHNResponse[HNItemIDList](s)
+
+  def parseItemResponse(s: String) : ZIO[Console, Throwable, HNItem] = parseHNResponse[HNItem](s)
 
   // Simple input and output interaction
-  def promptInput = UIO {
-    println("Enter a page number to fetch a page of news items or anything else to quit: ")
-  }
+  def promptInput: ZIO[Console, Nothing, Unit] = putStrLn("Enter a page number to fetch a page of news items or anything else to quit: ")
 
-  def getNumericInput = {
+  def getNumericInput: ZIO[Console, Nothing, Option[HNItemID]] = {
     (for (
       input <- getStrLn;
       num <- Task.effect(input.toInt)
     ) yield num).fold(err => None, succ => Some(succ))
   }
 
-  def printTopItemCount(topItems: HNItemIDList) =
+  def printTopItemCount(topItems: HNItemIDList): ZIO[Console, Nothing, Unit] =
     putStrLn(s"Got ${topItems.size} items")
 
-  def printError(err: String) =
+  def printError(err: String): ZIO[Console, Nothing, Unit] =
     putStrLn(s"Error: $err")
 
-  def getUserPage = for (
+  def getUserPage: ZIO[Console, Nothing, Option[HNItemID]] = for (
     _ <- promptInput;
     page <- getNumericInput
   ) yield page
 
-  def fetchItem(id: HNItemID) = {
+  def fetchItem(id: HNItemID): ZIO[Env, Throwable, HNItem] = {
     for (
+      //_ <- putStrLn(s"fetching $id");
       s <- httpclient.get(getItemURL(id));
       item <- parseItemResponse(s)
     ) yield item
   }
 
-  def fetchPage(startPage: Int, numItemsPerPage: Int, hNItemIDList: HNItemIDList) = {
-
+  def fetchPage(startPage: Int, numItemsPerPage: Int, hNItemIDList: HNItemIDList): ZIO[Env, Throwable, List[HNItem]] = {
     val pageOfItems = hNItemIDList.slice(startPage * numItemsPerPage, startPage * numItemsPerPage + numItemsPerPage)
-
-    ZIO.foreachParN(4)(pageOfItems){
-      id =>
-        fetchItem(id)
-    }
-
-//    val fetchItems = pageOfItems.traverse(HNDataSources.getItem)
-//
-//    cache match {
-//      case Some(c) =>
-//        fetchItems.runF[Task](c)
-//      case None =>
-//        fetchItems.runF[Task]
-//    }
-
+    ZIO.foreachParN(8)(pageOfItems){id => fetchItem(id)}
   }
 
   // Print a page of fetched items
-  def printPageItems(startPage: Int, numItemsPerPage: Int, items: List[HNItem]) = {
+  def printPageItems(startPage: Int, numItemsPerPage: Int, items: List[HNItem]): ZIO[Console, Throwable, List[Unit]] = {
     // helper to show the article rank
     def itemNum(n: Int) = (startPage * numItemsPerPage) + n + 1
 
-    ZIO.effect {
+    val printList = items.zipWithIndex
 
-      items.zipWithIndex.foreach {
+    ZIO.foreach(printList){
         case (item, n) =>
-          println(s"${itemNum(n)}. ${item.title} ${Util.getHostName(item.url.getOrElse("none"))}")
-          println(s"  ${item.score} points by ${item.by} at ${Util.timestampToPretty(item.time)} ${item.descendants} comments\n")
+          putStrLn(s"${itemNum(n)}. ${item.title} ${Util.getHostName(item.url)} [${item.url}]") *>
+          putStrLn(s"  ${item.score} points by ${item.by} at ${Util.timestampToPretty(item.time)} | ${item.descendants} comments\n")
       }
-    }
   }
-  def showPagesLoop(topItems: HNItemIDList) : ZIO[Console with HttpClient, Throwable, Unit] = {
+
+  def showPagesLoop(topItems: HNItemIDList) : ZIO[Env, Throwable, Unit] = {
 
     getUserPage.flatMap {
       case Some(pageNumber) =>
@@ -170,7 +160,7 @@ object ZioHNApi {
 
     val runtime = new LiveRuntime {}
 
-    val startMessage = putStrLn(s"There are ${args.length} args")
+    //val startMessage = putStrLn(s"There are ${args.length} args")
 
     val frontPage = for (
       s <- httpclient.get(getTopItemsURL);
@@ -180,23 +170,22 @@ object ZioHNApi {
 
     runtime.unsafeRunSync(frontPage)
 
-
-    val program = for(
-      _ <- startMessage;
-      s <- httpclient.get(getTopItemsURL);
-      // This is short form of the following (httpclient is implemented in the package object)
-      //s <- ZIO.accessM[HttpClient with Blocking, Throwable, String](_.httpClient get getTopItemsURL);
-      items <- parseTopItemsResponse(s);
-      _ <- putStrLn(s"Received ${items.size} top page items from httpclient")
-    ) yield ()
-
-    val handleErrors = program.foldM(
-      err =>
-        putStrLn(s"Failed with ${err.getMessage}"),
-      _ =>
-        putStrLn("Success"))
-
-    runtime.unsafeRunSync(handleErrors)
+//    val program = for(
+//      _ <- startMessage;
+//      s <- httpclient.get(getTopItemsURL);
+//      // This is short form of the following (httpclient is implemented in the package object)
+//      //s <- ZIO.accessM[HttpClient with Blocking, Throwable, String](_.httpClient get getTopItemsURL);
+//      items <- parseTopItemsResponse(s);
+//      _ <- putStrLn(s"Received ${items.size} top page items from httpclient")
+//    ) yield ()
+//
+//    val handleErrors = program.foldM(
+//      err =>
+//        putStrLn(s"Failed with ${err.getMessage}"),
+//      _ =>
+//        putStrLn("Success"))
+//
+//    runtime.unsafeRunSync(handleErrors)
   }
 
 }
