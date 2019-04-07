@@ -7,6 +7,7 @@ import scalaz.zio.blocking.Blocking
 import scalaz.zio.console.{putStrLn, _}
 import scalaz.zio.{Task, UIO, ZIO}
 import upickle.default.{ReadWriter, macroRW, _}
+import org.apache.commons.text.StringEscapeUtils
 
 object HNApi {
 
@@ -59,7 +60,6 @@ object HNApi {
   }
 
   def parseTopItemsResponse(s: String): ZIO[Console, Throwable, HNItemIDList]= parseHNResponse[HNItemIDList](s)
-
   def parseItemResponse(s: String) : ZIO[Console, Throwable, HNItem] = parseHNResponse[HNItem](s)
 
   // Simple input and output interaction
@@ -96,6 +96,13 @@ object HNApi {
     ZIO.foreachParN(4)(pageOfItems){id => fetchItem(id)}
   }
 
+  def showComment(item: HNItem): ZIO[Console, Nothing, Unit] = {
+    val text = StringEscapeUtils.unescapeHtml3(item.text)
+    putStrLn(
+      s"""${item.by} ${Util.timestampToPretty(item.time)}
+         |${text}""".stripMargin)
+  }
+
   // Print a page of fetched items
   def printPageItems(startPage: Int, numItemsPerPage: Int, items: List[HNItem]): ZIO[Console, Throwable, List[Unit]] = {
     // helper to show the article rank
@@ -106,7 +113,7 @@ object HNApi {
     ZIO.foreach(printList){
       case (item, n) =>
         putStrLn(s"${itemNum(n)}. ${item.title} ${Util.getHostName(item.url)} [${item.url}]") *>
-          putStrLn(s"  ${item.score} points by ${item.by} at ${Util.timestampToPretty(item.time)} | ${item.descendants} comments\n")
+          putStrLn(s"  ${item.score} points by ${item.by} at ${Util.timestampToPretty(item.time)} | ${item.descendants} comments")
     }
   }
 
