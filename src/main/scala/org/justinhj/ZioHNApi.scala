@@ -54,10 +54,10 @@ object ZioHNApi {
      poll : HNItemID = HNMissingItemID, // The pollopt's associated poll.
      kids : List[HNItemID] = List.empty, // The ids of the item's comments, in ranked display order.
      url : String = "", // The URL of the story.
-     score : Int, // The story's score, or the votes for a pollopt.
-     title : String, // The title of the story, poll or job.
+     score : Int = 0, // The story's score, or the votes for a pollopt.
+     title : String = "", // The title of the story, poll or job.
      parts : List[HNItemID] = List.empty, // A list of related pollopts, in display order.
-     descendants : Int // In the case of stories or polls, the total comment count.
+     descendants : Int = 0 // In the case of stories or polls, the total comment count.
    )
 
   object HNItem {
