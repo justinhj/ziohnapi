@@ -39,8 +39,8 @@ object HttpClient {
 
       def requestSync(url: String) : String = {
 
-        // TODO pass logging environment
-        println(s"url get on thread ${Thread.currentThread().getName}")
+        // TODO use a logging module so we can do debug output
+        //println(s"url get on thread ${Thread.currentThread().getName}")
 
         Try(customHttp(url).asString) match {
 
