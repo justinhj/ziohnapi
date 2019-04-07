@@ -1,20 +1,21 @@
 package org.justinhj
 
-import org.justinhj.ZioHNApi.{HNItem, HNItemIDList, getTopItemsURL}
+import org.justinhj.hnapi.HNApi
+import org.justinhj.hnapi.HNApi.HNItem
 import org.justinhj.httpclient.HttpClient
 import org.justinhj.httpclient.HttpClient.Service
 import org.scalatest.FlatSpec
-import scalaz.zio.{Exit, IO, Runtime, ZIO}
 import scalaz.zio.blocking.Blocking
 import scalaz.zio.clock.Clock
 import scalaz.zio.console.Console
 import scalaz.zio.internal.{Platform, PlatformLive}
 import scalaz.zio.random.Random
 import scalaz.zio.system.System
+import scalaz.zio.{Exit, IO, Runtime, ZIO}
 
 
 // Test suite for ZIO HackerNews API
-class ZioHNApiTest extends FlatSpec {
+class HNApiTest extends FlatSpec {
 
   // The test http runtime
   trait HttpClientTest extends HttpClient {
@@ -25,8 +26,8 @@ class ZioHNApiTest extends FlatSpec {
     val httpClient: Service[Any with HttpClient with Blocking] = new Service[Any with HttpClient with Blocking] {
 
       def requestSync(url: String) : String = {
-        if(url == ZioHNApi.getTopItemsURL) sampleTopStories
-        else if(url == ZioHNApi.getItemURL(11498534)) sampleItem
+        if(url == HNApi.getTopItemsURL) sampleTopStories
+        else if(url == HNApi.getItemURL(11498534)) sampleItem
         else throw new Exception("Not found")
       }
 
@@ -51,8 +52,8 @@ class ZioHNApiTest extends FlatSpec {
     val runtime = new TestRuntime {}
 
     // As flatmap
-    val getItem = httpclient.get(ZioHNApi.getItemURL(11498534)).flatMap {
-      unParsed => ZioHNApi.parseItemResponse(unParsed)
+    val getItem = httpclient.get(HNApi.getItemURL(11498534)).flatMap {
+      unParsed => HNApi.parseItemResponse(unParsed)
     }
 
     val result: Exit[Throwable, HNItem] = runtime.unsafeRunSync(getItem)
@@ -69,25 +70,11 @@ class ZioHNApiTest extends FlatSpec {
     val runtime = new TestRuntime {}
 
     // As flatmap
-    val getTopStories = httpclient.get(getTopItemsURL).flatMap {
-      unParsed => ZioHNApi.parseTopItemsResponse(unParsed)
+    val getTopStories = httpclient.get(HNApi.getTopItemsURL).flatMap {
+      unParsed => HNApi.parseTopItemsResponse(unParsed)
     }
 
-    /*
-    // As for comprehension
-    val getTopStories2 = for(
-      unParsed <- httpclient.get(getTopItemsURL);
-      items <- ZioHNApi.parseTopItemsResponse(unParsed)
-    ) yield items
-
-    // As desugared for comprehension
-    val getTopStories3 = httpclient.get(getTopItemsURL).flatMap(unParsed =>
-      ZioHNApi.parseTopItemsResponse(unParsed).flatMap(items =>
-        ZioHNApi.parseTopItemsResponse(unParsed).flatMap(items2 =>
-          ZioHNApi.parseTopItemsResponse(unParsed).map(items3 => items ++ items2 ++ items3))))
-    */
-
-    val result: Exit[Throwable, HNItemIDList] = runtime.unsafeRunSync(getTopStories)
+    val result: Exit[Throwable, HNApi.HNItemIDList] = runtime.unsafeRunSync(getTopStories)
 
     result.fold(
       _ => fail,

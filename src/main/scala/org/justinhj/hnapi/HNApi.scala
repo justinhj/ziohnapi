@@ -1,26 +1,14 @@
-package org.justinhj
+package org.justinhj.hnapi
 
+import org.justinhj.httpclient
 import org.justinhj.httpclient.HttpClient
 import org.justinhj.util.Util
-import scalaz.zio.{Runtime, Task, ZIO}
 import scalaz.zio.blocking.Blocking
-import scalaz.zio.clock.Clock
 import scalaz.zio.console.{putStrLn, _}
-import scalaz.zio.internal.{Platform, PlatformLive}
-import scalaz.zio.random.Random
-import scalaz.zio.system.System
-import upickle.default.{ReadWriter, macroRW}
-import upickle.default._
+import scalaz.zio.{Task, ZIO}
+import upickle.default.{ReadWriter, macroRW, _}
 
-trait LiveRuntime extends Runtime[Clock with Console with System with Random with Blocking with HttpClient] {
-  type Environment = Clock with Console with System with Random with Blocking with HttpClient
-
-  val Platform: Platform       = PlatformLive.Default
-  val Environment: Environment = new Clock.Live with Console.Live with System.Live with Random.Live with Blocking.Live
-    with HttpClient.HttpClientLive
-}
-
-object ZioHNApi {
+object HNApi {
 
   type Env = HttpClient with Blocking with Console
 
@@ -43,22 +31,22 @@ object ZioHNApi {
   val getMaxItemURL = s"${baseHNURL}maxitem.json"
 
   case class HNItem(
-     id : HNItemID, // The item's unique id.
-     deleted : Boolean = false, // true if the item is deleted.
-     `type` : String, // The type of item. One of "job", "story", "comment", "poll", or "pollopt".
-     by : HNUserID = HNMissingUserID, // The username of the item's author.
-     time : Int, // Creation date of the item, in Unix Time.
-     text : String = "", // The comment, story or poll text. HTML.
-     dead : Boolean = false, // true if the item is dead.
-     parent : HNItemID = HNMissingItemID, // The comment's parent: either another comment or the relevant story.
-     poll : HNItemID = HNMissingItemID, // The pollopt's associated poll.
-     kids : List[HNItemID] = List.empty, // The ids of the item's comments, in ranked display order.
-     url : String = "", // The URL of the story.
-     score : Int = 0, // The story's score, or the votes for a pollopt.
-     title : String = "", // The title of the story, poll or job.
-     parts : List[HNItemID] = List.empty, // A list of related pollopts, in display order.
-     descendants : Int = 0 // In the case of stories or polls, the total comment count.
-   )
+                     id : HNItemID, // The item's unique id.
+                     deleted : Boolean = false, // true if the item is deleted.
+                     `type` : String, // The type of item. One of "job", "story", "comment", "poll", or "pollopt".
+                     by : HNUserID = HNMissingUserID, // The username of the item's author.
+                     time : Int, // Creation date of the item, in Unix Time.
+                     text : String = "", // The comment, story or poll text. HTML.
+                     dead : Boolean = false, // true if the item is dead.
+                     parent : HNItemID = HNMissingItemID, // The comment's parent: either another comment or the relevant story.
+                     poll : HNItemID = HNMissingItemID, // The pollopt's associated poll.
+                     kids : List[HNItemID] = List.empty, // The ids of the item's comments, in ranked display order.
+                     url : String = "", // The URL of the story.
+                     score : Int = 0, // The story's score, or the votes for a pollopt.
+                     title : String = "", // The title of the story, poll or job.
+                     parts : List[HNItemID] = List.empty, // A list of related pollopts, in display order.
+                     descendants : Int = 0 // In the case of stories or polls, the total comment count.
+                   )
 
   object HNItem {
     implicit val rw: ReadWriter[HNItem] = macroRW
@@ -67,7 +55,7 @@ object ZioHNApi {
   // Parse a type T form the input string, throws
   def parseHNResponse[T](s: String)(implicit r: ReadWriter[T]): ZIO[Console, Throwable, T] = {
     //putStrLn(s"Parsing $s") *>
-      ZIO.effect(read[T](s))
+    ZIO.effect(read[T](s))
   }
 
   def parseTopItemsResponse(s: String): ZIO[Console, Throwable, HNItemIDList]= parseHNResponse[HNItemIDList](s)
@@ -116,10 +104,10 @@ object ZioHNApi {
     val printList = items.zipWithIndex
 
     ZIO.foreach(printList){
-        case (item, n) =>
-          putStrLn(s"${itemNum(n)}. ${item.title} ${Util.getHostName(item.url)} [${item.url}]") *>
+      case (item, n) =>
+        putStrLn(s"${itemNum(n)}. ${item.title} ${Util.getHostName(item.url)} [${item.url}]") *>
           putStrLn(s"  ${item.score} points by ${item.by} at ${Util.timestampToPretty(item.time)} | ${item.descendants} comments\n")
-      }
+    }
   }
 
   def showPagesLoop(topItems: HNItemIDList) : ZIO[Env, Throwable, Unit] = {
@@ -137,27 +125,6 @@ object ZioHNApi {
       case None =>
         putStrLn("Have a nice day!")
     }
-  }
-
-  def main(args: Array[String]): Unit = {
-
-    val runtime = new LiveRuntime {}
-
-    val frontPage = for (
-      s <- httpclient.get(getTopItemsURL);
-      items <- parseTopItemsResponse(s);
-      _ <- showPagesLoop(items)
-    ) yield ()
-
-    runtime.unsafeRunSync(frontPage)
-
-//    val handleErrors = program.foldM(
-//      err =>
-//        putStrLn(s"Failed with ${err.getMessage}"),
-//      _ =>
-//        putStrLn("Success"))
-//
-//    runtime.unsafeRunSync(handleErrors)
   }
 
 }
