@@ -61,6 +61,7 @@ object HNApi {
 
   def parseTopItemsResponse(s: String): ZIO[Console, Throwable, HNItemIDList]= parseHNResponse[HNItemIDList](s)
   def parseItemResponse(s: String) : ZIO[Console, Throwable, HNItem] = parseHNResponse[HNItem](s)
+  def parseMaxItemResponse(s: String) : ZIO[Console, Throwable, HNItemID] = parseHNResponse[HNItemID](s)
 
   // Simple input and output interaction
   def promptInput: ZIO[Console, Nothing, Unit] = putStrLn("Enter a page number to fetch a page of news items or anything else to quit: ")
