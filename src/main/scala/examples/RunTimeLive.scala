@@ -1,13 +1,13 @@
 package examples
 
 import org.justinhj.httpclient.HttpClient
-import scalaz.zio.Runtime
-import scalaz.zio.blocking.Blocking
-import scalaz.zio.clock.Clock
-import scalaz.zio.console.Console
-import scalaz.zio.internal.{Platform, PlatformLive}
-import scalaz.zio.random.Random
-import scalaz.zio.system.System
+import zio.Runtime
+import zio.blocking.Blocking
+import zio.clock.Clock
+import zio.console.Console
+import zio.internal.{Platform, PlatformLive}
+import zio.random.Random
+import zio.system.System
 
 
 trait LiveRuntime extends Runtime[Clock with Console with System with Random with Blocking with HttpClient] {

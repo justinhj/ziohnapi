@@ -1,13 +1,14 @@
 package org.justinhj.httpclient
 
 import scalaj.http.{BaseHttp, HttpConstants, HttpOptions}
-import scalaz.zio.ZIO
-import scalaz.zio.blocking._
+import zio.ZIO
+import zio.blocking._
+import zio.blocking.Blocking
 
 import scala.util.{Failure, Success, Try}
 
 trait HttpClient {
-  val httpClient : HttpClient.Service[Any with HttpClient with Blocking]
+  val httpClient : HttpClient.Service[HttpClient with Blocking]
 
 }
 object HttpClient {

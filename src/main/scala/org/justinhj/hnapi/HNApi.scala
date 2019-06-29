@@ -3,9 +3,9 @@ package org.justinhj.hnapi
 import org.justinhj.httpclient
 import org.justinhj.httpclient.HttpClient
 import org.justinhj.util.Util
-import scalaz.zio.blocking.Blocking
-import scalaz.zio.console.{putStrLn, _}
-import scalaz.zio.{Task, ZIO}
+import zio.blocking.Blocking
+import zio.console.{putStrLn, _}
+import zio.{Task, ZIO}
 import upickle.default.{ReadWriter, macroRW, _}
 import org.apache.commons.text.StringEscapeUtils
 

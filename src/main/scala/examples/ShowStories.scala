@@ -2,8 +2,8 @@ package examples
 
 import org.justinhj.hnapi.HNApi._
 import org.justinhj.httpclient
-import scalaz.zio.ZIO
-import scalaz.zio.console._
+import zio.ZIO
+import zio.console._
 
 object ShowStories {
 

@@ -1,8 +1,8 @@
 package examples
 
 import org.justinhj.hnapi.HNApi._
-import scalaz.zio.console._
-import scalaz.zio.{Task, ZIO}
+import zio.console._
+import zio.{Task, ZIO}
 
 object ShowStoryComments {
 

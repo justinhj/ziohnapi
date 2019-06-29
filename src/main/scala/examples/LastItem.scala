@@ -2,8 +2,8 @@ package examples
 
 import org.justinhj.hnapi.HNApi._
 import org.justinhj.httpclient
-import scalaz.zio.Schedule
-import scalaz.zio.duration._
+import zio.Schedule
+import zio.duration._
 
 object LastItem {
 

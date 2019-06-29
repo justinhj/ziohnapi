@@ -40,7 +40,7 @@ javacOptions ++= Seq("-Xlint:unchecked", "-Xlint:deprecation", "-source", "1.7",
 // )
 
 val ScalaZVersion = "7.3.0-M28"
-val ZIOVersion = "1.0-RC1"
+val ZIOVersion = "1.0.0-RC8-12"
 
 libraryDependencies ++= Seq(
   "com.typesafe" % "config" % "1.3.1",
@@ -54,7 +54,7 @@ libraryDependencies ++= Seq(
   "com.lihaoyi" %% "upickle" % "0.7.1",
   // scalaz
   "org.scalaz" %% "scalaz-core" % ScalaZVersion,
-  "org.scalaz" %% "scalaz-zio" % ZIOVersion,
+  "dev.zio" %% "zio" % ZIOVersion,
   // type classes
   "com.github.mpilquist" %% "simulacrum" % "0.12.0",
   // Application
